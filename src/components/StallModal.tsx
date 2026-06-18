@@ -26,12 +26,12 @@ export function StallModal({ stall, onClose }: StallModalProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ stallId: stall.id })
       });
-      if (!res.ok) throw new Error('打卡失敗');
+      if (!res.ok) throw new Error(`伺服器回傳錯誤: ${res.status}`);
       setLocalCheckIns(prev => prev + 1);
       alert('打卡成功！');
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('無法連線到後端，打卡失敗。');
+      alert(`無法連線到後端，打卡失敗。\n原因: ${err.message}\n目前請求網址: ${API_BASE_URL}/checkins`);
     } finally {
       setIsSubmitting(false);
     }
@@ -46,7 +46,7 @@ export function StallModal({ stall, onClose }: StallModalProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ stallId: stall.id, content: newComment })
       });
-      if (!res.ok) throw new Error('評論失敗');
+      if (!res.ok) throw new Error(`伺服器回傳錯誤: ${res.status}`);
       const r = await res.json();
       
       let tagSentiment: 'positive' | 'negative' | 'neutral' = 'neutral';
@@ -64,9 +64,9 @@ export function StallModal({ stall, onClose }: StallModalProps) {
       
       setLocalReviews(prev => [newReviewObj, ...prev]);
       setNewComment('');
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('無法連線到後端，留言失敗。');
+      alert(`無法連線到後端，留言失敗。\n原因: ${err.message}\n目前請求網址: ${API_BASE_URL}/reviews`);
     } finally {
       setIsSubmitting(false);
     }

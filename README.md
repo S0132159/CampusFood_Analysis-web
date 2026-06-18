@@ -1,20 +1,57 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# 🍔 校園美食評論與人流預測系統 (Campus Food Flow & Review System) - 前端專案
 
-# Run and deploy your AI Studio app
+這是一個結合「決策樹模型」與「全端技術」的校園美食攤位管理與觀測系統。本專案為期末極速黑客松挑戰作品，旨在解決校園餐廳尖峰時刻人潮擁擠的問題，並透過 AI 智能分析提供精準的顧客回饋。
 
-This contains everything you need to run your app locally.
+本儲存庫 (Repository) 包含系統的 **前端 (Frontend) 介面**，負責與 Java Spring Boot 後端 API 進行互動，並將複雜的數據轉化為直覺、現代化的視覺呈現。
 
-View your app in AI Studio: https://ai.studio/apps/b40da53d-0632-47e7-a0b5-d8ca5767dad0
+---
 
-## Run Locally
+## ✨ 核心功能介紹 (Features)
 
-**Prerequisites:**  Node.js
+### 1. 📊 智能人流觀測看板 (Stall Dashboard)
+* **視覺化忙閒狀態**：首頁以卡片式佈局展示 5 間校園美食攤位。
+* **決策樹狀態標示**：攤位卡片的顏色 (紅/黃/綠) 並非隨機產生，而是由後端決策樹模型根據「當下時段」與「歷史簽到人次」即時推算出的忙閒狀態。
 
+### 2. 📍 即時打卡簽到系統 (Check-in System)
+* **彈出式互動視窗 (Modal)**：點擊攤位即可開啟詳細資訊面板。
+* **人次統計**：提供「我要打卡」功能，並動態顯示該攤位的當日簽到總人次，資料直達後端資料庫。
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+### 3. 💬 AI 情緒分析評論區 (AI Sentiment Reviews)
+* **雙欄佈局設計**：在攤位詳細面板的右側，提供獨立的留言列表區域。
+* **自動情緒標籤 (Badges)**：每則留言旁皆附帶「正向 (綠色)」或「負向 (紅色)」標籤。此標籤為後端決策樹透過「正負面關鍵字計數」分析後的心情判定結果，前端負責將分類結果進行強烈對比的視覺渲染。
+
+---
+
+## 🛠 技術棧 (Tech Stack)
+
+* **UI 框架**：React (搭配 v0 AI 生成輔助)
+* **CSS 樣式**：Tailwind CSS (響應式設計、Utility-first 快速排版)
+* **圖示庫**：Lucide Icons
+* **資料請求**：原生 Fetch API (透過 `useEffect` 處理非同步資料獲取)
+
+---
+
+## 🔄 系統架構與資料流向 (Architecture & Data Flow)
+
+本系統嚴格遵循 **Frontend → API → DB** 的分層架構，前端不直接操作資料，確保資安與架構清晰：
+
+1. **Frontend (React)**：負責畫面渲染與監聽使用者事件 (如點擊打卡、送出評論)。
+2. **API (Java Spring Boot)**：前端透過 RESTful API (`GET`, `POST`) 發送請求至後端。
+3. **ML 邏輯嵌入**：後端在處理請求時，會先通過**決策樹 (Decision Tree)** 進行邏輯判斷 (如計算人流等級、分析評論情緒)。
+4. **DB (MySQL on Railway)**：後端將判定後的最終結果與原始數據寫入或讀取自資料庫，最後將 JSON 回傳給前端渲染。
+
+---
+
+## 🔌 API 串接端點 (API Endpoints Integration)
+
+本前端專案主要串接以下由 Java 後端提供的 RESTful API：
+
+| 請求方法 | 端點路徑 | 前端用途說明 |
+| :--- | :--- | :--- |
+| `GET` | `/stalls` | 載入首頁攤位列表與基本資訊 |
+| `GET` | `/stalls/{id}/crowd-level` | 獲取特定攤位的即時人流狀態 (決策樹計算結果)，用於渲染卡片顏色 |
+| `POST` | `/checkins` | 傳送使用者的打卡紀錄 |
+| `GET` | `/stalls/{id}/reviews` | 獲取特定攤位的所有歷史評論與情緒標籤 |
+| `POST` | `/reviews` | 送出新評論 (後端會進行決策樹情緒分類後再儲存) |
+
+---
