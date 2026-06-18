@@ -11,6 +11,66 @@ interface StallModalProps {
 
 export function StallModal({ stall, onClose }: StallModalProps) {
   const [newComment, setNewComment] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [localCheckIns, setLocalCheckIns] = useState(stall.todayCheckIns);
+  const [localReviews, setLocalReviews] = useState(stall.reviews);
+
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+
+  const handleCheckIn = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/checkins`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stallId: stall.id })
+      });
+      if (!res.ok) throw new Error('打卡失敗');
+      setLocalCheckIns(prev => prev + 1);
+      alert('打卡成功！');
+    } catch (err) {
+      console.error(err);
+      alert('無法連線到後端，打卡失敗。');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSubmitReview = async () => {
+    if (!newComment.trim() || isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/reviews`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stallId: stall.id, content: newComment })
+      });
+      if (!res.ok) throw new Error('評論失敗');
+      const r = await res.json();
+      
+      let tagSentiment: 'positive' | 'negative' | 'neutral' = 'neutral';
+      if (r.sentiment.includes('positive')) tagSentiment = 'positive';
+      if (r.sentiment.includes('negative')) tagSentiment = 'negative';
+      
+      const newReviewObj = {
+        id: String(r.id),
+        author: "匿名同學 (你)",
+        content: r.content,
+        date: new Date(r.createdAt).toLocaleDateString(),
+        rating: tagSentiment === 'positive' ? 5 : (tagSentiment === 'negative' ? 1 : 3),
+        aiTags: [{ label: r.sentiment.split(' ')[0], sentiment: tagSentiment }]
+      };
+      
+      setLocalReviews(prev => [newReviewObj, ...prev]);
+      setNewComment('');
+    } catch (err) {
+      console.error(err);
+      alert('無法連線到後端，留言失敗。');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   
   // Prevent scrolling on the body when modal is open
   useEffect(() => {
@@ -43,7 +103,11 @@ export function StallModal({ stall, onClose }: StallModalProps) {
               </div>
               <p className="text-slate-500">人流預測與打卡數據追蹤</p>
             </div>
-            <button className="bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-sm hover:bg-indigo-700 transition-colors shrink-0">
+            <button 
+              onClick={handleCheckIn}
+              disabled={isSubmitting}
+              className="bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-sm hover:bg-indigo-700 disabled:opacity-50 transition-colors shrink-0"
+            >
               <MapPin className="w-4 h-4" />
               我要打卡
             </button>
@@ -90,7 +154,7 @@ export function StallModal({ stall, onClose }: StallModalProps) {
           {/* Big Number Stat */}
           <div className="mt-8 flex items-end justify-between">
             <div>
-              <div className="text-5xl font-black text-slate-900 tracking-tighter">{stall.todayCheckIns}</div>
+              <div className="text-5xl font-black text-slate-900 tracking-tighter">{localCheckIns}</div>
               <div className="text-sm text-slate-500 font-medium">今日打卡人次</div>
             </div>
             <div className="bg-rose-500 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2">
@@ -114,10 +178,10 @@ export function StallModal({ stall, onClose }: StallModalProps) {
 
           {/* Scrollable Comment List */}
           <div className="flex-1 space-y-6 overflow-y-auto pr-4">
-             {stall.reviews.length === 0 ? (
+             {localReviews.length === 0 ? (
                <div className="text-center text-slate-400 py-12">目前還沒有評論喔！</div>
              ) : (
-               stall.reviews.map((review) => (
+               localReviews.map((review) => (
                   <div key={review.id} className="bg-slate-50 rounded-2xl p-5 border border-slate-100 relative group">
                     <div className="flex justify-between mb-2">
                       <span className="font-bold text-sm text-slate-900">{review.author}</span>
@@ -148,7 +212,11 @@ export function StallModal({ stall, onClose }: StallModalProps) {
               onChange={(e) => setNewComment(e.target.value)}
               className="flex-1 bg-slate-100 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 text-slate-800 placeholder-slate-400 outline-none"
             />
-            <button className="bg-indigo-600 text-white p-3 rounded-xl hover:bg-indigo-700 transition-colors">
+            <button 
+              onClick={handleSubmitReview}
+              disabled={isSubmitting || !newComment.trim()}
+              className="bg-indigo-600 text-white p-3 rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+            >
               <Send className="w-5 h-5 -rotate-45 mb-1 ml-1" />
             </button>
           </div>
