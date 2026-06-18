@@ -45,15 +45,15 @@ export default function App() {
              };
           });
 
-          // 保留 mockStalls 裡面的假資料圖表（因為目前後端還沒實作匯出報表的 API）
+          // 保留 mockStalls 裡面的假資料圖表與狀態（依據使用者要求，SQL 缺少人流數據時改用假資料）
           const mockMatch = mockStalls.find(m => m.name === stall.name);
 
           return {
             id: String(stall.id),
             name: stall.name,
-            status: status,
+            status: mockMatch ? mockMatch.status : 'normal', // 強制使用前端假資料狀態
             todayCheckIns: mockMatch ? mockMatch.todayCheckIns : Math.floor(Math.random() * 100),
-            pastTwoWeeksData: mockMatch ? mockMatch.pastTwoWeeksData : [],
+            pastTwoWeeksData: mockMatch ? mockMatch.pastTwoWeeksData : [], // 強制使用前端假資料圖表
             reviews: mappedReviews.length > 0 ? mappedReviews : (mockMatch ? mockMatch.reviews : [])
           };
         }));
